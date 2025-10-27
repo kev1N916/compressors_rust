@@ -68,6 +68,9 @@ static COMPRESSORS: &[DecompressorFn] = &[
     compress_27_bit,
     compress_28_bit,
     compress_29_bit,
+    compress_30_bit,
+    compress_31_bit,
+    compress_32_bit,
 ];
 #[derive(Debug, Clone, Copy)]
 enum ExceptionSize {
@@ -392,7 +395,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-      #[test]
+    #[test]
     fn test_2_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -422,7 +425,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-  #[test]
+    #[test]
     fn test_3_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -452,7 +455,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-      #[test]
+    #[test]
     fn test_4_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -482,7 +485,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-      #[test]
+    #[test]
     fn test_5_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -512,7 +515,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-      #[test]
+    #[test]
     fn test_6_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -542,7 +545,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-      #[test]
+    #[test]
     fn test_7_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -572,8 +575,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-
-      #[test]
+    #[test]
     fn test_8_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -603,8 +605,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-
-      #[test]
+    #[test]
     fn test_9_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -634,7 +635,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-       #[test]
+    #[test]
     fn test_10_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -664,7 +665,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-       #[test]
+    #[test]
     fn test_11_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -694,8 +695,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-
-       #[test]
+    #[test]
     fn test_12_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -725,8 +725,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-
-       #[test]
+    #[test]
     fn test_13_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -756,8 +755,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-
-       #[test]
+    #[test]
     fn test_14_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -787,7 +785,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_15_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -817,7 +815,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_16_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -847,8 +845,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-
-          #[test]
+    #[test]
     fn test_17_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -878,7 +875,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_18_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -908,7 +905,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_19_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -938,7 +935,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_20_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -968,7 +965,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_21_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -998,7 +995,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_22_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -1028,7 +1025,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_23_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -1058,7 +1055,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_24_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -1088,7 +1085,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_25_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -1118,7 +1115,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_26_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -1148,7 +1145,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_27_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -1178,7 +1175,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_28_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -1208,7 +1205,7 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
-          #[test]
+    #[test]
     fn test_29_bit() {
         let mut rng = rand::thread_rng();
         let original: Vec<u32> = (0..128)
@@ -1238,4 +1235,93 @@ mod tests {
         assert_eq!(&decoded[..original.len()], &original[..]);
     }
 
+    #[test]
+    fn test_30_bit() {
+        let mut rng = rand::thread_rng();
+        let original: Vec<u32> = (0..128)
+            .map(|i| {
+                let val: u32 = rng.r#gen();
+                if i % 16 == 0 {
+                    if val == 0 {
+                        1 % u32::MAX
+                    } else {
+                        (1 + val) % u32::MAX
+                    } // Ensure it's at least 1
+                } else {
+                    if val == 0 {
+                        1 % (1u32 << 30)
+                    } else {
+                        (val) % (1u32 << 30)
+                    } // Ensure it's at least 1
+                }
+            })
+            .collect();
+        let encoded = PForDelta::encode_batch(&original);
+
+        let decoded = PForDelta::decode_batch(&encoded);
+
+        // Decoded may have padding zeros, so check prefix matches
+        assert!(decoded.len() == original.len());
+        assert_eq!(&decoded[..original.len()], &original[..]);
+    }
+
+    #[test]
+    fn test_31_bit() {
+        let mut rng = rand::thread_rng();
+        let original: Vec<u32> = (0..128)
+            .map(|i| {
+                let val: u32 = rng.r#gen();
+                if i % 16 == 0 {
+                    if val == 0 {
+                        1 % u32::MAX
+                    } else {
+                        (1 + val) % u32::MAX
+                    } // Ensure it's at least 1
+                } else {
+                    if val == 0 {
+                        1 % (1u32 << 31)
+                    } else {
+                        (val) % (1u32 << 31)
+                    } // Ensure it's at least 1
+                }
+            })
+            .collect();
+        let encoded = PForDelta::encode_batch(&original);
+
+        let decoded = PForDelta::decode_batch(&encoded);
+
+        // Decoded may have padding zeros, so check prefix matches
+        assert!(decoded.len() == original.len());
+        assert_eq!(&decoded[..original.len()], &original[..]);
+    }
+
+    #[test]
+    fn test_32_bit() {
+        let mut rng = rand::thread_rng();
+        let original: Vec<u32> = (0..128)
+            .map(|i| {
+                let val: u32 = rng.r#gen();
+                if i % 16 == 0 {
+                    if val == 0 {
+                        1 % u32::MAX
+                    } else {
+                        (1 + val) % u32::MAX
+                    } // Ensure it's at least 1
+                } else {
+                    if val == 0 {
+                        1 % u32::MAX
+                    } else {
+                        (val) % (u32::MAX)
+                    } // Ensure it's at least 1
+                }
+            })
+            .collect();
+        let encoded = PForDelta::encode_batch(&original);
+
+        let decoded = PForDelta::decode_batch(&encoded);
+
+        // Decoded may have padding zeros, so check prefix matches
+        assert!(decoded.len() == original.len());
+        assert_eq!(&decoded[..original.len()], &original[..]);
+    }
 }

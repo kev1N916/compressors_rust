@@ -2628,196 +2628,168 @@ pub fn decompress_22_bit(src: &[u32], dst: &mut [u32]) {
     // dst[0]: bits 0-21 (in src[0] bits 0-21)
     dst[0]  = (src[0] >> 0)  & 0x3FFFFF;
     
-    // dst[1]: bits 22-43 (spans src[0] bits 22-31 + src[1] bits 0-11)
+    // dst[1]: bits 22-43 (src[0] bits 22-31 = 10 bits, src[1] bits 0-11 = 12 bits)
     dst[1]  = ((src[0] >> 22) | (src[1] << 10)) & 0x3FFFFF;
 
-    // dst[2]: bits 44-65 (spans src[1] bits 12-31 + src[2] bits 0-1)
+    // dst[2]: bits 44-65 (src[1] bits 12-31 = 20 bits, src[2] bits 0-1 = 2 bits)
     dst[2]  = ((src[1] >> 12) | (src[2] << 20)) & 0x3FFFFF;
     
     // dst[3]: bits 66-87 (in src[2] bits 2-23)
     dst[3]  = (src[2] >> 2)  & 0x3FFFFF;
 
-    // dst[4]: bits 88-109 (spans src[2] bits 24-31 + src[3] bits 0-13)
+    // dst[4]: bits 88-109 (src[2] bits 24-31 = 8 bits, src[3] bits 0-13 = 14 bits)
     dst[4]  = ((src[2] >> 24) | (src[3] << 8)) & 0x3FFFFF;
     
-    // dst[5]: bits 110-131 (spans src[3] bits 14-31 + src[4] bits 0-3)
+    // dst[5]: bits 110-131 (src[3] bits 14-31 = 18 bits, src[4] bits 0-3 = 4 bits)
     dst[5]  = ((src[3] >> 14) | (src[4] << 18)) & 0x3FFFFF;
 
     // dst[6]: bits 132-153 (in src[4] bits 4-25)
     dst[6]  = (src[4] >> 4)  & 0x3FFFFF;
     
-    // dst[7]: bits 154-175 (spans src[4] bits 26-31 + src[5] bits 0-15)
+    // dst[7]: bits 154-175 (src[4] bits 26-31 = 6 bits, src[5] bits 0-15 = 16 bits)
     dst[7]  = ((src[4] >> 26) | (src[5] << 6)) & 0x3FFFFF;
 
-    // dst[8]: bits 176-197 (spans src[5] bits 16-31 + src[6] bits 0-5)
+    // dst[8]: bits 176-197 (src[5] bits 16-31 = 16 bits, src[6] bits 0-5 = 6 bits)
     dst[8]  = ((src[5] >> 16) | (src[6] << 16)) & 0x3FFFFF;
     
     // dst[9]: bits 198-219 (in src[6] bits 6-27)
     dst[9]  = (src[6] >> 6)  & 0x3FFFFF;
 
-    // dst[10]: bits 220-241 (spans src[6] bits 28-31 + src[7] bits 0-17)
+    // dst[10]: bits 220-241 (src[6] bits 28-31 = 4 bits, src[7] bits 0-17 = 18 bits)
     dst[10] = ((src[6] >> 28) | (src[7] << 4)) & 0x3FFFFF;
     
-    // dst[11]: bits 242-263 (spans src[7] bits 18-31 + src[8] bits 0-7)
+    // dst[11]: bits 242-263 (src[7] bits 18-31 = 14 bits, src[8] bits 0-7 = 8 bits)
     dst[11] = ((src[7] >> 18) | (src[8] << 14)) & 0x3FFFFF;
 
-    // dst[12]: bits 264-285 (spans src[8] bits 8-31 + src[9] bits 0-1 but src[8] only has 24 bits left)
-    dst[12] = ((src[8] >> 8) | (src[9] << 24)) & 0x3FFFFF;
+    // dst[12]: bits 264-285 (src[8] bits 8-29 = 22 bits)
+    dst[12] = (src[8] >> 8) & 0x3FFFFF;
     
-    // dst[13]: bits 286-307 (in src[9] bits 0-21)
-    dst[13] = (src[9] >> 0)  & 0x3FFFFF;
+    // dst[13]: bits 286-307 (src[8] bits 30-31 = 2 bits, src[9] bits 0-19 = 20 bits)
+    dst[13] = ((src[8] >> 30) | (src[9] << 2)) & 0x3FFFFF;
 
-    // dst[14]: bits 308-329 (spans src[9] bits 22-31 + src[10] bits 0-11)
-    dst[14] = ((src[9] >> 22) | (src[10] << 10)) & 0x3FFFFF;
+    // dst[14]: bits 308-329 (src[9] bits 20-31 = 12 bits, src[10] bits 0-9 = 10 bits)
+    dst[14] = ((src[9] >> 20) | (src[10] << 12)) & 0x3FFFFF;
     
-    // dst[15]: bits 330-351 (spans src[10] bits 12-31 + src[11] bits 0-1)
-    dst[15] = ((src[10] >> 12) | (src[11] << 20)) & 0x3FFFFF;
+    // dst[15]: bits 330-351 (in src[10] bits 10-31)
+    dst[15] = (src[10] >> 10) & 0x3FFFFF;
 
-    // dst[16]: bits 352-373 (in src[11] bits 2-23)
-    dst[16] = (src[11] >> 2)  & 0x3FFFFF;
+    // dst[16]: bits 352-373 (in src[11] bits 0-21)
+    dst[16] = (src[11] >> 0)  & 0x3FFFFF;
     
-    // dst[17]: bits 374-395 (spans src[11] bits 24-31 + src[12] bits 0-13)
-    dst[17] = ((src[11] >> 24) | (src[12] << 8)) & 0x3FFFFF;
+    // dst[17]: bits 374-395 (src[11] bits 22-31 = 10 bits, src[12] bits 0-11 = 12 bits)
+    dst[17] = ((src[11] >> 22) | (src[12] << 10)) & 0x3FFFFF;
 
-    // dst[18]: bits 396-417 (spans src[12] bits 14-31 + src[13] bits 0-3)
-    dst[18] = ((src[12] >> 14) | (src[13] << 18)) & 0x3FFFFF;
+    // dst[18]: bits 396-417 (src[12] bits 12-31 = 20 bits, src[13] bits 0-1 = 2 bits)
+    dst[18] = ((src[12] >> 12) | (src[13] << 20)) & 0x3FFFFF;
     
-    // dst[19]: bits 418-439 (in src[13] bits 4-25)
-    dst[19] = (src[13] >> 4)  & 0x3FFFFF;
+    // dst[19]: bits 418-439 (in src[13] bits 2-23)
+    dst[19] = (src[13] >> 2)  & 0x3FFFFF;
 
-    // dst[20]: bits 440-461 (spans src[13] bits 26-31 + src[14] bits 0-15)
-    dst[20] = ((src[13] >> 26) | (src[14] << 6)) & 0x3FFFFF;
+    // dst[20]: bits 440-461 (src[13] bits 24-31 = 8 bits, src[14] bits 0-13 = 14 bits)
+    dst[20] = ((src[13] >> 24) | (src[14] << 8)) & 0x3FFFFF;
     
-    // dst[21]: bits 462-483 (spans src[14] bits 16-31 + src[15] bits 0-5)
-    dst[21] = ((src[14] >> 16) | (src[15] << 16)) & 0x3FFFFF;
+    // dst[21]: bits 462-483 (src[14] bits 14-31 = 18 bits, src[15] bits 0-3 = 4 bits)
+    dst[21] = ((src[14] >> 14) | (src[15] << 18)) & 0x3FFFFF;
 
-    // dst[22]: bits 484-505 (in src[15] bits 6-27)
-    dst[22] = (src[15] >> 6)  & 0x3FFFFF;
+    // dst[22]: bits 484-505 (in src[15] bits 4-25)
+    dst[22] = (src[15] >> 4)  & 0x3FFFFF;
     
-    // dst[23]: bits 506-527 (spans src[15] bits 28-31 + src[16] bits 0-17)
-    dst[23] = ((src[15] >> 28) | (src[16] << 4)) & 0x3FFFFF;
+    // dst[23]: bits 506-527 (src[15] bits 26-31 = 6 bits, src[16] bits 0-15 = 16 bits)
+    dst[23] = ((src[15] >> 26) | (src[16] << 6)) & 0x3FFFFF;
 
-    // dst[24]: bits 528-549 (spans src[16] bits 18-31 + src[17] bits 0-7)
-    dst[24] = ((src[16] >> 18) | (src[17] << 14)) & 0x3FFFFF;
+    // dst[24]: bits 528-549 (src[16] bits 16-31 = 16 bits, src[17] bits 0-5 = 6 bits)
+    dst[24] = ((src[16] >> 16) | (src[17] << 16)) & 0x3FFFFF;
     
-    // dst[25]: bits 550-571 (spans src[17] bits 8-31 + src[18] bits 0-1 but src[17] only has 24 bits left)
-    dst[25] = ((src[17] >> 8) | (src[18] << 24)) & 0x3FFFFF;
+    // dst[25]: bits 550-571 (in src[17] bits 6-27)
+    dst[25] = (src[17] >> 6) & 0x3FFFFF;
 
-    // dst[26]: bits 572-593 (in src[18] bits 0-21)
-    dst[26] = (src[18] >> 0)  & 0x3FFFFF;
+    // dst[26]: bits 572-593 (src[17] bits 28-31 = 4 bits, src[18] bits 0-17 = 18 bits)
+    dst[26] = ((src[17] >> 28) | (src[18] << 4)) & 0x3FFFFF;
     
-    // dst[27]: bits 594-615 (spans src[18] bits 22-31 + src[19] bits 0-11)
-    dst[27] = ((src[18] >> 22) | (src[19] << 10)) & 0x3FFFFF;
+    // dst[27]: bits 594-615 (src[18] bits 18-31 = 14 bits, src[19] bits 0-7 = 8 bits)
+    dst[27] = ((src[18] >> 18) | (src[19] << 14)) & 0x3FFFFF;
 
-    // dst[28]: bits 616-637 (spans src[19] bits 12-31 + src[20] bits 0-1)
-    dst[28] = ((src[19] >> 12) | (src[20] << 20)) & 0x3FFFFF;
+    // dst[28]: bits 616-637 (in src[19] bits 8-29)
+    dst[28] = (src[19] >> 8) & 0x3FFFFF;
     
-    // dst[29]: bits 638-659 (in src[20] bits 2-23)
-    dst[29] = (src[20] >> 2)  & 0x3FFFFF;
+    // dst[29]: bits 638-659 (src[19] bits 30-31 = 2 bits, src[20] bits 0-19 = 20 bits)
+    dst[29] = ((src[19] >> 30) | (src[20] << 2)) & 0x3FFFFF;
 
-    // dst[30]: bits 660-681 (spans src[20] bits 24-31 + src[21] bits 0-13)
-    dst[30] = ((src[20] >> 24) | (src[21] << 8)) & 0x3FFFFF;
+    // dst[30]: bits 660-681 (src[20] bits 20-31 = 12 bits, src[21] bits 0-9 = 10 bits)
+    dst[30] = ((src[20] >> 20) | (src[21] << 12)) & 0x3FFFFF;
     
-    // dst[31]: bits 682-703 (spans src[21] bits 14-31 + would need src[22] bits 0-3, but only 18 bits)
-    dst[31] = (src[21] >> 14) & 0x3FFFFF;
+    // dst[31]: bits 682-703 (in src[21] bits 10-31)
+    dst[31] = (src[21] >> 10) & 0x3FFFFF;
 }
 
-// 32 values * 22 bits = 704 bits = 22 words
+// Compress 32 values of 22 bits each into 22 words of 32 bits
 pub fn compress_22_bit(src: &[u32], dst: &mut [u32]) {
-    // Word 0: bits 0-31
-    dst[0] = (src[0] & 0x3FFFFF) << 0      // bits 0-21
-        | (src[1] & 0x3FF) << 22;          // bits 22-31 (lower 10 bits of value 1)
-
-    // Word 1: bits 32-63
-    dst[1] = ((src[1] >> 10) & 0xFFF) << 0 // bits 0-11 (upper 12 bits of value 1)
-        | (src[2] & 0xFFFFF) << 12;        // bits 12-31 (lower 20 bits of value 2)
-
-    // Word 2: bits 64-95
-    dst[2] = ((src[2] >> 20) & 0x3) << 0   // bits 0-1 (upper 2 bits of value 2)
-        | (src[3] & 0x3FFFFF) << 2         // bits 2-23
-        | (src[4] & 0xFF) << 24;           // bits 24-31 (lower 8 bits of value 4)
-
-    // Word 3: bits 96-127
-    dst[3] = ((src[4] >> 8) & 0x3FFF) << 0 // bits 0-13 (upper 14 bits of value 4)
-        | (src[5] & 0x3FFFF) << 14;        // bits 14-31 (lower 18 bits of value 5)
-
-    // Word 4: bits 128-159
-    dst[4] = ((src[5] >> 18) & 0xF) << 0   // bits 0-3 (upper 4 bits of value 5)
-        | (src[6] & 0x3FFFFF) << 4         // bits 4-25
-        | (src[7] & 0x3F) << 26;           // bits 26-31 (lower 6 bits of value 7)
-
-    // Word 5: bits 160-191
-    dst[5] = ((src[7] >> 6) & 0xFFFF) << 0 // bits 0-15 (upper 16 bits of value 7)
-        | (src[8] & 0xFFFF) << 16;         // bits 16-31 (lower 16 bits of value 8)
-
-    // Word 6: bits 192-223
-    dst[6] = ((src[8] >> 16) & 0x3F) << 0  // bits 0-5 (upper 6 bits of value 8)
-        | (src[9] & 0x3FFFFF) << 6         // bits 6-27
-        | (src[10] & 0xF) << 28;           // bits 28-31 (lower 4 bits of value 10)
-
-    // Word 7: bits 224-255
-    dst[7] = ((src[10] >> 4) & 0x3FFFF) << 0 // bits 0-17 (upper 18 bits of value 10)
-        | (src[11] & 0x3FFF) << 18;        // bits 18-31 (lower 14 bits of value 11)
-
-    // Word 8: bits 256-287
-    dst[8] = ((src[11] >> 14) & 0xFF) << 0 // bits 0-7 (upper 8 bits of value 11)
-        | (src[12] & 0xFFFFFF) << 8;       // bits 8-31 (lower 24 bits of value 12)
-
-    // Word 9: bits 288-319
-    dst[9] = (src[13] & 0x3FFFFF) << 0     // bits 0-21
-        | (src[14] & 0x3FF) << 22;         // bits 22-31 (lower 10 bits of value 14)
-
-    // Word 10: bits 320-351
-    dst[10] = ((src[14] >> 10) & 0xFFF) << 0 // bits 0-11 (upper 12 bits of value 14)
-        | (src[15] & 0xFFFFF) << 12;       // bits 12-31 (lower 20 bits of value 15)
-
-    // Word 11: bits 352-383
-    dst[11] = ((src[15] >> 20) & 0x3) << 0 // bits 0-1 (upper 2 bits of value 15)
-        | (src[16] & 0x3FFFFF) << 2        // bits 2-23
-        | (src[17] & 0xFF) << 24;          // bits 24-31 (lower 8 bits of value 17)
-
-    // Word 12: bits 384-415
-    dst[12] = ((src[17] >> 8) & 0x3FFF) << 0 // bits 0-13 (upper 14 bits of value 17)
-        | (src[18] & 0x3FFFF) << 14;       // bits 14-31 (lower 18 bits of value 18)
-
-    // Word 13: bits 416-447
-    dst[13] = ((src[18] >> 18) & 0xF) << 0 // bits 0-3 (upper 4 bits of value 18)
-        | (src[19] & 0x3FFFFF) << 4        // bits 4-25
-        | (src[20] & 0x3F) << 26;          // bits 26-31 (lower 6 bits of value 20)
-
-    // Word 14: bits 448-479
-    dst[14] = ((src[20] >> 6) & 0xFFFF) << 0 // bits 0-15 (upper 16 bits of value 20)
-        | (src[21] & 0xFFFF) << 16;        // bits 16-31 (lower 16 bits of value 21)
-
-    // Word 15: bits 480-511
-    dst[15] = ((src[21] >> 16) & 0x3F) << 0 // bits 0-5 (upper 6 bits of value 21)
-        | (src[22] & 0x3FFFFF) << 6        // bits 6-27
-        | (src[23] & 0xF) << 28;           // bits 28-31 (lower 4 bits of value 23)
-
-    // Word 16: bits 512-543
-    dst[16] = ((src[23] >> 4) & 0x3FFFF) << 0 // bits 0-17 (upper 18 bits of value 23)
-        | (src[24] & 0x3FFF) << 18;        // bits 18-31 (lower 14 bits of value 24)
-
-    // Word 17: bits 544-575
-    dst[17] = ((src[24] >> 14) & 0xFF) << 0 // bits 0-7 (upper 8 bits of value 24)
-        | (src[25] & 0xFFFFFF) << 8;       // bits 8-31 (lower 24 bits of value 25)
-
-    // Word 18: bits 576-607
-    dst[18] = (src[26] & 0x3FFFFF) << 0    // bits 0-21
-        | (src[27] & 0x3FF) << 22;         // bits 22-31 (lower 10 bits of value 27)
-
-    // Word 19: bits 608-639
-    dst[19] = ((src[27] >> 10) & 0xFFF) << 0 // bits 0-11 (upper 12 bits of value 27)
-        | (src[28] & 0xFFFFF) << 12;       // bits 12-31 (lower 20 bits of value 28)
-
-    // Word 20: bits 640-671
-    dst[20] = ((src[28] >> 20) & 0x3) << 0 // bits 0-1 (upper 2 bits of value 28)
-        | (src[29] & 0x3FFFFF) << 2        // bits 2-23
-        | (src[30] & 0xFF) << 24;          // bits 24-31 (lower 8 bits of value 30)
-
-    // Word 21: bits 672-703
-    dst[21] = ((src[30] >> 8) & 0x3FFF) << 0 // bits 0-13 (upper 14 bits of value 30)
-        | (src[31] & 0x3FFFF) << 14;       // bits 14-31 (only 18 bits of value 31)
+ 
+    // dst[0]: src[0] bits 0-21 at positions 0-21, src[1] bits 0-9 at positions 22-31
+    dst[0] = (src[0] & 0x3FFFFF) | ((src[1] & 0x3FF) << 22);
+    
+    // dst[1]: src[1] bits 10-21 at positions 0-11, src[2] bits 0-19 at positions 12-31
+    dst[1] = ((src[1] >> 10) & 0xFFF) | ((src[2] & 0xFFFFF) << 12);
+    
+    // dst[2]: src[2] bits 20-21 at positions 0-1, src[3] bits 0-21 at positions 2-23, src[4] bits 0-7 at positions 24-31
+    dst[2] = ((src[2] >> 20) & 0x3) | ((src[3] & 0x3FFFFF) << 2) | ((src[4] & 0xFF) << 24);
+    
+    // dst[3]: src[4] bits 8-21 at positions 0-13, src[5] bits 0-17 at positions 14-31
+    dst[3] = ((src[4] >> 8) & 0x3FFF) | ((src[5] & 0x3FFFF) << 14);
+    
+    // dst[4]: src[5] bits 18-21 at positions 0-3, src[6] bits 0-21 at positions 4-25, src[7] bits 0-5 at positions 26-31
+    dst[4] = ((src[5] >> 18) & 0xF) | ((src[6] & 0x3FFFFF) << 4) | ((src[7] & 0x3F) << 26);
+    
+    // dst[5]: src[7] bits 6-21 at positions 0-15, src[8] bits 0-15 at positions 16-31
+    dst[5] = ((src[7] >> 6) & 0xFFFF) | ((src[8] & 0xFFFF) << 16);
+    
+    // dst[6]: src[8] bits 16-21 at positions 0-5, src[9] bits 0-21 at positions 6-27, src[10] bits 0-3 at positions 28-31
+    dst[6] = ((src[8] >> 16) & 0x3F) | ((src[9] & 0x3FFFFF) << 6) | ((src[10] & 0xF) << 28);
+    
+    // dst[7]: src[10] bits 4-21 at positions 0-17, src[11] bits 0-13 at positions 18-31
+    dst[7] = ((src[10] >> 4) & 0x3FFFF) | ((src[11] & 0x3FFF) << 18);
+    
+    // dst[8]: src[11] bits 14-21 at positions 0-7, src[12] bits 0-21 at positions 8-29, src[13] bits 0-1 at positions 30-31
+    dst[8] = ((src[11] >> 14) & 0xFF) | ((src[12] & 0x3FFFFF) << 8) | ((src[13] & 0x3) << 30);
+    
+    // dst[9]: src[13] bits 2-21 at positions 0-19, src[14] bits 0-11 at positions 20-31
+    dst[9] = ((src[13] >> 2) & 0xFFFFF) | ((src[14] & 0xFFF) << 20);
+    
+    // dst[10]: src[14] bits 12-21 at positions 0-9, src[15] bits 0-21 at positions 10-31
+    dst[10] = ((src[14] >> 12) & 0x3FF) | ((src[15] & 0x3FFFFF) << 10);
+    
+    // dst[11]: src[16] bits 0-21 at positions 0-21, src[17] bits 0-9 at positions 22-31
+    dst[11] = (src[16] & 0x3FFFFF) | ((src[17] & 0x3FF) << 22);
+    
+    // dst[12]: src[17] bits 10-21 at positions 0-11, src[18] bits 0-19 at positions 12-31
+    dst[12] = ((src[17] >> 10) & 0xFFF) | ((src[18] & 0xFFFFF) << 12);
+    
+    // dst[13]: src[18] bits 20-21 at positions 0-1, src[19] bits 0-21 at positions 2-23, src[20] bits 0-7 at positions 24-31
+    dst[13] = ((src[18] >> 20) & 0x3) | ((src[19] & 0x3FFFFF) << 2) | ((src[20] & 0xFF) << 24);
+    
+    // dst[14]: src[20] bits 8-21 at positions 0-13, src[21] bits 0-17 at positions 14-31
+    dst[14] = ((src[20] >> 8) & 0x3FFF) | ((src[21] & 0x3FFFF) << 14);
+    
+    // dst[15]: src[21] bits 18-21 at positions 0-3, src[22] bits 0-21 at positions 4-25, src[23] bits 0-5 at positions 26-31
+    dst[15] = ((src[21] >> 18) & 0xF) | ((src[22] & 0x3FFFFF) << 4) | ((src[23] & 0x3F) << 26);
+    
+    // dst[16]: src[23] bits 6-21 at positions 0-15, src[24] bits 0-15 at positions 16-31
+    dst[16] = ((src[23] >> 6) & 0xFFFF) | ((src[24] & 0xFFFF) << 16);
+    
+    // dst[17]: src[24] bits 16-21 at positions 0-5, src[25] bits 0-21 at positions 6-27, src[26] bits 0-3 at positions 28-31
+    dst[17] = ((src[24] >> 16) & 0x3F) | ((src[25] & 0x3FFFFF) << 6) | ((src[26] & 0xF) << 28);
+    
+    // dst[18]: src[26] bits 4-21 at positions 0-17, src[27] bits 0-13 at positions 18-31
+    dst[18] = ((src[26] >> 4) & 0x3FFFF) | ((src[27] & 0x3FFF) << 18);
+    
+    // dst[19]: src[27] bits 14-21 at positions 0-7, src[28] bits 0-21 at positions 8-29, src[29] bits 0-1 at positions 30-31
+    dst[19] = ((src[27] >> 14) & 0xFF) | ((src[28] & 0x3FFFFF) << 8) | ((src[29] & 0x3) << 30);
+    
+    // dst[20]: src[29] bits 2-21 at positions 0-19, src[30] bits 0-11 at positions 20-31
+    dst[20] = ((src[29] >> 2) & 0xFFFFF) | ((src[30] & 0xFFF) << 20);
+    
+    // dst[21]: src[30] bits 12-21 at positions 0-9, src[31] bits 0-21 at positions 10-31
+    dst[21] = ((src[30] >> 12) & 0x3FF) | ((src[31] & 0x3FFFFF) << 10);
 }
 
 // 32 values * 23 bits = 736 bits = 23 words
@@ -4384,6 +4356,99 @@ pub fn decompress_30_bit(src: &[u32], dst: &mut [u32]) {
     dst[31] = (src[29] >> 2)  & 0x3FFFFFFF;
 }
 
+// Compress 32 values of 30 bits each into 30 words of 32 bits
+pub fn compress_30_bit(src: &[u32], dst: &mut [u32]) {
+    // dst[0]: src[0] bits 0-29 at positions 0-29, src[1] bits 0-1 at positions 30-31
+    dst[0] = (src[0] & 0x3FFFFFFF) | ((src[1] & 0x3) << 30);
+    
+    // dst[1]: src[1] bits 2-29 at positions 0-27, src[2] bits 0-3 at positions 28-31
+    dst[1] = ((src[1] >> 2) & 0xFFFFFFF) | ((src[2] & 0xF) << 28);
+    
+    // dst[2]: src[2] bits 4-29 at positions 0-25, src[3] bits 0-5 at positions 26-31
+    dst[2] = ((src[2] >> 4) & 0x3FFFFFF) | ((src[3] & 0x3F) << 26);
+    
+    // dst[3]: src[3] bits 6-29 at positions 0-23, src[4] bits 0-7 at positions 24-31
+    dst[3] = ((src[3] >> 6) & 0xFFFFFF) | ((src[4] & 0xFF) << 24);
+    
+    // dst[4]: src[4] bits 8-29 at positions 0-21, src[5] bits 0-9 at positions 22-31
+    dst[4] = ((src[4] >> 8) & 0x3FFFFF) | ((src[5] & 0x3FF) << 22);
+    
+    // dst[5]: src[5] bits 10-29 at positions 0-19, src[6] bits 0-11 at positions 20-31
+    dst[5] = ((src[5] >> 10) & 0xFFFFF) | ((src[6] & 0xFFF) << 20);
+    
+    // dst[6]: src[6] bits 12-29 at positions 0-17, src[7] bits 0-13 at positions 18-31
+    dst[6] = ((src[6] >> 12) & 0x3FFFF) | ((src[7] & 0x3FFF) << 18);
+    
+    // dst[7]: src[7] bits 14-29 at positions 0-15, src[8] bits 0-15 at positions 16-31
+    dst[7] = ((src[7] >> 14) & 0xFFFF) | ((src[8] & 0xFFFF) << 16);
+    
+    // dst[8]: src[8] bits 16-29 at positions 0-13, src[9] bits 0-17 at positions 14-31
+    dst[8] = ((src[8] >> 16) & 0x3FFF) | ((src[9] & 0x3FFFF) << 14);
+    
+    // dst[9]: src[9] bits 18-29 at positions 0-11, src[10] bits 0-19 at positions 12-31
+    dst[9] = ((src[9] >> 18) & 0xFFF) | ((src[10] & 0xFFFFF) << 12);
+    
+    // dst[10]: src[10] bits 20-29 at positions 0-9, src[11] bits 0-21 at positions 10-31
+    dst[10] = ((src[10] >> 20) & 0x3FF) | ((src[11] & 0x3FFFFF) << 10);
+    
+    // dst[11]: src[11] bits 22-29 at positions 0-7, src[12] bits 0-23 at positions 8-31
+    dst[11] = ((src[11] >> 22) & 0xFF) | ((src[12] & 0xFFFFFF) << 8);
+    
+    // dst[12]: src[12] bits 24-29 at positions 0-5, src[13] bits 0-25 at positions 6-31
+    dst[12] = ((src[12] >> 24) & 0x3F) | ((src[13] & 0x3FFFFFF) << 6);
+    
+    // dst[13]: src[13] bits 26-29 at positions 0-3, src[14] bits 0-27 at positions 4-31
+    dst[13] = ((src[13] >> 26) & 0xF) | ((src[14] & 0xFFFFFFF) << 4);
+    
+    // dst[14]: src[14] bits 28-29 at positions 0-1, src[15] bits 0-29 at positions 2-31
+    dst[14] = ((src[14] >> 28) & 0x3) | ((src[15] & 0x3FFFFFFF) << 2);
+    
+    // dst[15]: src[16] bits 0-29 at positions 0-29, src[17] bits 0-1 at positions 30-31
+    dst[15] = (src[16] & 0x3FFFFFFF) | ((src[17] & 0x3) << 30);
+    
+    // dst[16]: src[17] bits 2-29 at positions 0-27, src[18] bits 0-3 at positions 28-31
+    dst[16] = ((src[17] >> 2) & 0xFFFFFFF) | ((src[18] & 0xF) << 28);
+    
+    // dst[17]: src[18] bits 4-29 at positions 0-25, src[19] bits 0-5 at positions 26-31
+    dst[17] = ((src[18] >> 4) & 0x3FFFFFF) | ((src[19] & 0x3F) << 26);
+    
+    // dst[18]: src[19] bits 6-29 at positions 0-23, src[20] bits 0-7 at positions 24-31
+    dst[18] = ((src[19] >> 6) & 0xFFFFFF) | ((src[20] & 0xFF) << 24);
+    
+    // dst[19]: src[20] bits 8-29 at positions 0-21, src[21] bits 0-9 at positions 22-31
+    dst[19] = ((src[20] >> 8) & 0x3FFFFF) | ((src[21] & 0x3FF) << 22);
+    
+    // dst[20]: src[21] bits 10-29 at positions 0-19, src[22] bits 0-11 at positions 20-31
+    dst[20] = ((src[21] >> 10) & 0xFFFFF) | ((src[22] & 0xFFF) << 20);
+    
+    // dst[21]: src[22] bits 12-29 at positions 0-17, src[23] bits 0-13 at positions 18-31
+    dst[21] = ((src[22] >> 12) & 0x3FFFF) | ((src[23] & 0x3FFF) << 18);
+    
+    // dst[22]: src[23] bits 14-29 at positions 0-15, src[24] bits 0-15 at positions 16-31
+    dst[22] = ((src[23] >> 14) & 0xFFFF) | ((src[24] & 0xFFFF) << 16);
+    
+    // dst[23]: src[24] bits 16-29 at positions 0-13, src[25] bits 0-17 at positions 14-31
+    dst[23] = ((src[24] >> 16) & 0x3FFF) | ((src[25] & 0x3FFFF) << 14);
+    
+    // dst[24]: src[25] bits 18-29 at positions 0-11, src[26] bits 0-19 at positions 12-31
+    dst[24] = ((src[25] >> 18) & 0xFFF) | ((src[26] & 0xFFFFF) << 12);
+    
+    // dst[25]: src[26] bits 20-29 at positions 0-9, src[27] bits 0-21 at positions 10-31
+    dst[25] = ((src[26] >> 20) & 0x3FF) | ((src[27] & 0x3FFFFF) << 10);
+    
+    // dst[26]: src[27] bits 22-29 at positions 0-7, src[28] bits 0-23 at positions 8-31
+    dst[26] = ((src[27] >> 22) & 0xFF) | ((src[28] & 0xFFFFFF) << 8);
+    
+    // dst[27]: src[28] bits 24-29 at positions 0-5, src[29] bits 0-25 at positions 6-31
+    dst[27] = ((src[28] >> 24) & 0x3F) | ((src[29] & 0x3FFFFFF) << 6);
+    
+    // dst[28]: src[29] bits 26-29 at positions 0-3, src[30] bits 0-27 at positions 4-31
+    dst[28] = ((src[29] >> 26) & 0xF) | ((src[30] & 0xFFFFFFF) << 4);
+    
+    // dst[29]: src[30] bits 28-29 at positions 0-1, src[31] bits 0-29 at positions 2-31
+    dst[29] = ((src[30] >> 28) & 0x3) | ((src[31] & 0x3FFFFFFF) << 2);
+}
+
 // 32 values * 31 bits = 992 bits = 31 words
 pub fn decompress_31_bit(src: &[u32], dst: &mut [u32]) {
     // dst[0]: bits 0-30 (word 0, pos 0-30)
@@ -4481,6 +4546,103 @@ pub fn decompress_31_bit(src: &[u32], dst: &mut [u32]) {
 
     // dst[31]: bits 961-991 (word 30 pos 1-31)
     dst[31] = (src[30] >> 1) & 0x7FFFFFFF;
+}
+
+// Compress 32 values of 31 bits each into 31 words of 32 bits
+pub fn compress_31_bit(src: &[u32], dst: &mut [u32]) {
+    
+    // dst[0]: src[0] bits 0-30 at positions 0-30, src[1] bit 0 at position 31
+    dst[0] = (src[0] & 0x7FFFFFFF) | ((src[1] & 0x1) << 31);
+    
+    // dst[1]: src[1] bits 1-30 at positions 0-29, src[2] bits 0-1 at positions 30-31
+    dst[1] = ((src[1] >> 1) & 0x3FFFFFFF) | ((src[2] & 0x3) << 30);
+    
+    // dst[2]: src[2] bits 2-30 at positions 0-28, src[3] bits 0-2 at positions 29-31
+    dst[2] = ((src[2] >> 2) & 0x1FFFFFFF) | ((src[3] & 0x7) << 29);
+    
+    // dst[3]: src[3] bits 3-30 at positions 0-27, src[4] bits 0-3 at positions 28-31
+    dst[3] = ((src[3] >> 3) & 0xFFFFFFF) | ((src[4] & 0xF) << 28);
+    
+    // dst[4]: src[4] bits 4-30 at positions 0-26, src[5] bits 0-4 at positions 27-31
+    dst[4] = ((src[4] >> 4) & 0x7FFFFFF) | ((src[5] & 0x1F) << 27);
+    
+    // dst[5]: src[5] bits 5-30 at positions 0-25, src[6] bits 0-5 at positions 26-31
+    dst[5] = ((src[5] >> 5) & 0x3FFFFFF) | ((src[6] & 0x3F) << 26);
+    
+    // dst[6]: src[6] bits 6-30 at positions 0-24, src[7] bits 0-6 at positions 25-31
+    dst[6] = ((src[6] >> 6) & 0x1FFFFFF) | ((src[7] & 0x7F) << 25);
+    
+    // dst[7]: src[7] bits 7-30 at positions 0-23, src[8] bits 0-7 at positions 24-31
+    dst[7] = ((src[7] >> 7) & 0xFFFFFF) | ((src[8] & 0xFF) << 24);
+    
+    // dst[8]: src[8] bits 8-30 at positions 0-22, src[9] bits 0-8 at positions 23-31
+    dst[8] = ((src[8] >> 8) & 0x7FFFFF) | ((src[9] & 0x1FF) << 23);
+    
+    // dst[9]: src[9] bits 9-30 at positions 0-21, src[10] bits 0-9 at positions 22-31
+    dst[9] = ((src[9] >> 9) & 0x3FFFFF) | ((src[10] & 0x3FF) << 22);
+    
+    // dst[10]: src[10] bits 10-30 at positions 0-20, src[11] bits 0-10 at positions 21-31
+    dst[10] = ((src[10] >> 10) & 0x1FFFFF) | ((src[11] & 0x7FF) << 21);
+    
+    // dst[11]: src[11] bits 11-30 at positions 0-19, src[12] bits 0-11 at positions 20-31
+    dst[11] = ((src[11] >> 11) & 0xFFFFF) | ((src[12] & 0xFFF) << 20);
+    
+    // dst[12]: src[12] bits 12-30 at positions 0-18, src[13] bits 0-12 at positions 19-31
+    dst[12] = ((src[12] >> 12) & 0x7FFFF) | ((src[13] & 0x1FFF) << 19);
+    
+    // dst[13]: src[13] bits 13-30 at positions 0-17, src[14] bits 0-13 at positions 18-31
+    dst[13] = ((src[13] >> 13) & 0x3FFFF) | ((src[14] & 0x3FFF) << 18);
+    
+    // dst[14]: src[14] bits 14-30 at positions 0-16, src[15] bits 0-14 at positions 17-31
+    dst[14] = ((src[14] >> 14) & 0x1FFFF) | ((src[15] & 0x7FFF) << 17);
+    
+    // dst[15]: src[15] bits 15-30 at positions 0-15, src[16] bits 0-15 at positions 16-31
+    dst[15] = ((src[15] >> 15) & 0xFFFF) | ((src[16] & 0xFFFF) << 16);
+    
+    // dst[16]: src[16] bits 16-30 at positions 0-14, src[17] bits 0-16 at positions 15-31
+    dst[16] = ((src[16] >> 16) & 0x7FFF) | ((src[17] & 0x1FFFF) << 15);
+    
+    // dst[17]: src[17] bits 17-30 at positions 0-13, src[18] bits 0-17 at positions 14-31
+    dst[17] = ((src[17] >> 17) & 0x3FFF) | ((src[18] & 0x3FFFF) << 14);
+    
+    // dst[18]: src[18] bits 18-30 at positions 0-12, src[19] bits 0-18 at positions 13-31
+    dst[18] = ((src[18] >> 18) & 0x1FFF) | ((src[19] & 0x7FFFF) << 13);
+    
+    // dst[19]: src[19] bits 19-30 at positions 0-11, src[20] bits 0-19 at positions 12-31
+    dst[19] = ((src[19] >> 19) & 0xFFF) | ((src[20] & 0xFFFFF) << 12);
+    
+    // dst[20]: src[20] bits 20-30 at positions 0-10, src[21] bits 0-20 at positions 11-31
+    dst[20] = ((src[20] >> 20) & 0x7FF) | ((src[21] & 0x1FFFFF) << 11);
+    
+    // dst[21]: src[21] bits 21-30 at positions 0-9, src[22] bits 0-21 at positions 10-31
+    dst[21] = ((src[21] >> 21) & 0x3FF) | ((src[22] & 0x3FFFFF) << 10);
+    
+    // dst[22]: src[22] bits 22-30 at positions 0-8, src[23] bits 0-22 at positions 9-31
+    dst[22] = ((src[22] >> 22) & 0x1FF) | ((src[23] & 0x7FFFFF) << 9);
+    
+    // dst[23]: src[23] bits 23-30 at positions 0-7, src[24] bits 0-23 at positions 8-31
+    dst[23] = ((src[23] >> 23) & 0xFF) | ((src[24] & 0xFFFFFF) << 8);
+    
+    // dst[24]: src[24] bits 24-30 at positions 0-6, src[25] bits 0-24 at positions 7-31
+    dst[24] = ((src[24] >> 24) & 0x7F) | ((src[25] & 0x1FFFFFF) << 7);
+    
+    // dst[25]: src[25] bits 25-30 at positions 0-5, src[26] bits 0-25 at positions 6-31
+    dst[25] = ((src[25] >> 25) & 0x3F) | ((src[26] & 0x3FFFFFF) << 6);
+    
+    // dst[26]: src[26] bits 26-30 at positions 0-4, src[27] bits 0-26 at positions 5-31
+    dst[26] = ((src[26] >> 26) & 0x1F) | ((src[27] & 0x7FFFFFF) << 5);
+    
+    // dst[27]: src[27] bits 27-30 at positions 0-3, src[28] bits 0-27 at positions 4-31
+    dst[27] = ((src[27] >> 27) & 0xF) | ((src[28] & 0xFFFFFFF) << 4);
+    
+    // dst[28]: src[28] bits 28-30 at positions 0-2, src[29] bits 0-28 at positions 3-31
+    dst[28] = ((src[28] >> 28) & 0x7) | ((src[29] & 0x1FFFFFFF) << 3);
+    
+    // dst[29]: src[29] bits 29-30 at positions 0-1, src[30] bits 0-29 at positions 2-31
+    dst[29] = ((src[29] >> 29) & 0x3) | ((src[30] & 0x3FFFFFFF) << 2);
+    
+    // dst[30]: src[30] bit 30 at position 0, src[31] bits 0-30 at positions 1-31
+    dst[30] = ((src[30] >> 30) & 0x1) | ((src[31] & 0x7FFFFFFF) << 1);
 }
 
 // 32 values * 32 bits = 1024 bits = 32 words
