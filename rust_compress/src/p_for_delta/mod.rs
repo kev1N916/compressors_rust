@@ -119,7 +119,6 @@ impl PForDelta {
         } else {
             threshold = 1u32 << b;
         }
-        println!("{:?}", b);
         // Identify exceptions
         let mut exceptions = Vec::new();
         for (i, &val) in values.iter().enumerate() {
@@ -174,7 +173,6 @@ impl PForDelta {
         // Write b-bit slots
         write_packed_bits(&mut compressed, &slots, b);
 
-        println!("exceptions {:?}", exceptions);
         // Write exception values
         for (_, val) in &exceptions {
             match exc_size {
@@ -216,7 +214,6 @@ impl PForDelta {
         );
         // Read exception values
         let mut exception_values: Vec<u32> = Vec::new();
-        println!("{:?}", exc_size);
 
         match exc_size {
             ExceptionSize::Bits8 => {
@@ -232,7 +229,6 @@ impl PForDelta {
         }
 
         let mut curr_exc_idx = first_exc_idx as usize;
-        println!("{:?}", exception_values);
 
         // Follow linked list to find exception positions
         for i in 0..exception_values.len() {
