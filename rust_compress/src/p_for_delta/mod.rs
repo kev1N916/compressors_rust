@@ -1,8 +1,5 @@
-mod decompress;
-use rand::Rng;
-use std::u32::MAX;
-
-use decompress::*;
+mod utils;
+use utils::*;
 const BATCH_SIZE: usize = 128;
 static DECOMPRESSORS: &[DecompressorFn] = &[
     decompress_1_bit,
@@ -101,144 +98,135 @@ impl ExceptionSize {
     }
 }
 
-pub struct PForDelta {}
+pub fn compress(values: &[u32]) -> Vec<u8> {
+    assert!(
+        values.len() == BATCH_SIZE,
+        "Batch must contain exactly 128 values"
+    );
 
-impl PForDelta {
-    pub fn encode_batch(values: &[u32]) -> Vec<u8> {
-        assert!(
-            values.len() == BATCH_SIZE,
-            "Batch must contain exactly 128 values"
-        );
+    // Find optimal b such that at least 90% of values fit in b bits
+    let b = find_optimal_b(values);
 
-        // Find optimal b such that at least 90% of values fit in b bits
-        let b = find_optimal_b(values);
-
-        let threshold;
-        if b == 32 {
-            threshold = u32::MAX;
-        } else {
-            threshold = 1u32 << b;
+    let threshold;
+    if b == 32 {
+        threshold = u32::MAX;
+    } else {
+        threshold = 1u32 << b;
+    }
+    // Identify exceptions
+    let mut exceptions = Vec::new();
+    for (i, &val) in values.iter().enumerate() {
+        if val >= threshold {
+            exceptions.push((i, val));
         }
-        // Identify exceptions
-        let mut exceptions = Vec::new();
-        for (i, &val) in values.iter().enumerate() {
-            if val >= threshold {
-                exceptions.push((i, val));
-            }
-        }
+    }
 
-        // Force additional exceptions if gaps are too large
-        let exceptions: Vec<(usize, u32)> = force_intermediate_exceptions(&exceptions, b, values);
-        let mut exc_size = ExceptionSize::BitsNotNeeded;
-        if exceptions.len() != 0 {
-            let max_val = exceptions.iter().map(|(_, value)| *value).max().unwrap();
-            exc_size = ExceptionSize::from_max_value(max_val);
-        }
+    // Force additional exceptions if gaps are too large
+    let exceptions: Vec<(usize, u32)> = force_intermediate_exceptions(&exceptions, b, values);
+    let mut exc_size = ExceptionSize::BitsNotNeeded;
+    if exceptions.len() != 0 {
+        let max_val = exceptions.iter().map(|(_, value)| *value).max().unwrap();
+        exc_size = ExceptionSize::from_max_value(max_val);
+    }
 
-        // Build the compressed representation
-        let mut compressed: Vec<u8> = Vec::new();
+    // Build the compressed representation
+    let mut compressed: Vec<u8> = Vec::new();
 
-        // Write header: b (5 bits), exception_size (2 bits), first_exception_idx (7 bits)
-        let first_exc_idx = if exceptions.is_empty() {
-            127 // Invalid marker
-        } else {
-            exceptions[0].0 as u8
-        };
+    // Write header: b (5 bits), exception_size (2 bits), first_exception_idx (7 bits)
+    let first_exc_idx = if exceptions.is_empty() {
+        127 // Invalid marker
+    } else {
+        exceptions[0].0 as u8
+    };
 
-        compressed.push(b as u8);
-        compressed.push(exc_size.bits() as u8);
-        compressed.push(first_exc_idx as u8);
+    compressed.push(b as u8);
+    compressed.push(exc_size.bits() as u8);
+    compressed.push(first_exc_idx as u8);
 
-        // Create b-bit slots
-        let mut slots = vec![0u32; BATCH_SIZE];
-        let exc_set: std::collections::HashSet<usize> =
-            exceptions.iter().map(|(i, _)| *i).collect();
+    // Create b-bit slots
+    let mut slots = vec![0u32; BATCH_SIZE];
+    let exc_set: std::collections::HashSet<usize> = exceptions.iter().map(|(i, _)| *i).collect();
 
-        // Fill slots with values or offsets
-        for i in 0..BATCH_SIZE {
-            if exc_set.contains(&i) {
-                // Find offset to next exception
-                let curr_pos = exceptions.iter().position(|(idx, _)| *idx == i).unwrap();
-                if curr_pos + 1 < exceptions.len() {
-                    let next_idx = exceptions[curr_pos + 1].0;
-                    slots[i] = (next_idx - i - 1) as u32;
-                } else {
-                    slots[i] = 0; // Last exception
-                }
+    // Fill slots with values or offsets
+    for i in 0..BATCH_SIZE {
+        if exc_set.contains(&i) {
+            // Find offset to next exception
+            let curr_pos = exceptions.iter().position(|(idx, _)| *idx == i).unwrap();
+            if curr_pos + 1 < exceptions.len() {
+                let next_idx = exceptions[curr_pos + 1].0;
+                slots[i] = (next_idx - i - 1) as u32;
             } else {
-                slots[i] = values[i];
+                slots[i] = 0; // Last exception
             }
+        } else {
+            slots[i] = values[i];
         }
-
-        // Write b-bit slots
-        write_packed_bits(&mut compressed, &slots, b);
-
-        // Write exception values
-        for (_, val) in &exceptions {
-            match exc_size {
-                ExceptionSize::Bits8 => compressed.push(*val as u8),
-                ExceptionSize::Bits16 => compressed.extend_from_slice(&(*val as u16).to_le_bytes()),
-                ExceptionSize::Bits32 => compressed.extend_from_slice(&val.to_le_bytes()),
-                ExceptionSize::BitsNotNeeded => break,
-            }
-        }
-
-        compressed
     }
 
-    pub fn decode_batch(compressed: &[u8]) -> Vec<u32> {
-        let mut pos = 0;
+    // Write b-bit slots
+    write_packed_bits(&mut compressed, &slots, b);
 
-        let b = compressed[pos];
-        pos = pos + 1;
-        let exc_size_code = compressed[pos];
-        pos += 1;
-        let first_exc_idx = compressed[pos];
-        pos += 1;
-
-        let exc_size = match exc_size_code {
-            0 => ExceptionSize::BitsNotNeeded,
-            8 => ExceptionSize::Bits8,
-            16 => ExceptionSize::Bits16,
-            32 => ExceptionSize::Bits32,
-            _ => {
-                panic!();
-            }
-        };
-        let pos_end = (pos + 16usize * b as usize) as usize;
-        // Read b-bit slots
-        let mut result = read_packed_bits(
-            &u8_chunks_to_u32_vec(&compressed[pos..pos_end]),
-            BATCH_SIZE,
-            b.into(),
-        );
-        // Read exception values
-        let mut exception_values: Vec<u32> = Vec::new();
-
+    // Write exception values
+    for (_, val) in &exceptions {
         match exc_size {
-            ExceptionSize::Bits8 => {
-                exception_values = u8_chunks_to_u8_vec(&compressed[pos_end..]);
-            }
-            ExceptionSize::Bits16 => {
-                exception_values = u8_chunks_to_u16_vec(&compressed[pos_end..])
-            }
-            ExceptionSize::Bits32 => {
-                exception_values = u8_chunks_to_u32_vec(&compressed[pos_end..])
-            }
-            ExceptionSize::BitsNotNeeded => {}
+            ExceptionSize::Bits8 => compressed.push(*val as u8),
+            ExceptionSize::Bits16 => compressed.extend_from_slice(&(*val as u16).to_le_bytes()),
+            ExceptionSize::Bits32 => compressed.extend_from_slice(&val.to_le_bytes()),
+            ExceptionSize::BitsNotNeeded => break,
         }
-
-        let mut curr_exc_idx = first_exc_idx as usize;
-
-        // Follow linked list to find exception positions
-        for i in 0..exception_values.len() {
-            let offset_to_next_exception = result[curr_exc_idx];
-            result[curr_exc_idx] = exception_values[i];
-            curr_exc_idx = curr_exc_idx + (1 + offset_to_next_exception) as usize;
-        }
-
-        result
     }
+
+    compressed
+}
+
+pub fn decompress(compressed: &[u8]) -> Vec<u32> {
+    let mut pos = 0;
+
+    let b = compressed[pos];
+    pos = pos + 1;
+    let exc_size_code = compressed[pos];
+    pos += 1;
+    let first_exc_idx = compressed[pos];
+    pos += 1;
+
+    let exc_size = match exc_size_code {
+        0 => ExceptionSize::BitsNotNeeded,
+        8 => ExceptionSize::Bits8,
+        16 => ExceptionSize::Bits16,
+        32 => ExceptionSize::Bits32,
+        _ => {
+            panic!();
+        }
+    };
+    let pos_end = (pos + 16usize * b as usize) as usize;
+    // Read b-bit slots
+    let mut result = read_packed_bits(
+        &u8_chunks_to_u32_vec(&compressed[pos..pos_end]),
+        BATCH_SIZE,
+        b.into(),
+    );
+    // Read exception values
+    let mut exception_values: Vec<u32> = Vec::new();
+
+    match exc_size {
+        ExceptionSize::Bits8 => {
+            exception_values = u8_chunks_to_u8_vec(&compressed[pos_end..]);
+        }
+        ExceptionSize::Bits16 => exception_values = u8_chunks_to_u16_vec(&compressed[pos_end..]),
+        ExceptionSize::Bits32 => exception_values = u8_chunks_to_u32_vec(&compressed[pos_end..]),
+        ExceptionSize::BitsNotNeeded => {}
+    }
+
+    let mut curr_exc_idx = first_exc_idx as usize;
+
+    // Follow linked list to find exception positions
+    for i in 0..exception_values.len() {
+        let offset_to_next_exception = result[curr_exc_idx];
+        result[curr_exc_idx] = exception_values[i];
+        curr_exc_idx = curr_exc_idx + (1 + offset_to_next_exception) as usize;
+    }
+
+    result
 }
 
 fn find_optimal_b(values: &[u32]) -> usize {
@@ -359,6 +347,8 @@ fn u8_chunks_to_u8_vec(bytes: &[u8]) -> Vec<u32> {
 
 #[cfg(test)]
 mod tests {
+    use rand::Rng;
+
     use super::*;
 
     #[test]
@@ -382,9 +372,9 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -412,9 +402,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -442,9 +433,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -472,9 +464,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+         let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -502,9 +495,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+         let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -532,9 +526,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -562,9 +557,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -592,9 +588,9 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -622,9 +618,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -652,9 +649,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -682,9 +680,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+       let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -712,9 +711,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+         let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -742,9 +742,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -772,9 +773,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -802,9 +804,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -832,9 +835,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -862,9 +866,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+       let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -892,9 +897,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -922,9 +928,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -952,9 +959,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+         let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -982,9 +990,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1012,9 +1021,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+         let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1042,9 +1052,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1072,9 +1083,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+         let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1102,9 +1114,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1132,9 +1145,9 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+         let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1162,9 +1175,9 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1192,9 +1205,9 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1222,9 +1235,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+         let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1252,9 +1266,9 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1282,9 +1296,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+        let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
@@ -1312,9 +1327,10 @@ mod tests {
                 }
             })
             .collect();
-        let encoded = PForDelta::encode_batch(&original);
+    let encoded = compress(&original);
 
-        let decoded = PForDelta::decode_batch(&encoded);
+        let decoded = decompress(&encoded);
+
 
         // Decoded may have padding zeros, so check prefix matches
         assert!(decoded.len() == original.len());
